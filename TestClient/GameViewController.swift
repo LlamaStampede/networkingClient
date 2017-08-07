@@ -7,29 +7,28 @@
 //
 
 import UIKit
-import SpriteKit
-import GameplayKit
+import SwiftSocket
 
 class GameViewController: UIViewController {
 
+    var client : TCPClient?
+    var timer : Timer = Timer()
+    
+    @IBAction func connectToServer(_ sender: Any) {
+        client = TCPClient(address: "18.187.5.181", port: 8080)
+        
+        switch client?.connect(timeout: 10) {
+        case .success?:
+            scheduledTimerWithTimeInterval()
+            print("Connection Success")
+        case .failure(let error)?:
+            print(error)
+        default:
+            print("Unknown error")
+        }
+    }
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        if let view = self.view as! SKView? {
-            // Load the SKScene from 'GameScene.sks'
-            if let scene = SKScene(fileNamed: "GameScene") {
-                // Set the scale mode to scale to fit the window
-                scene.scaleMode = .aspectFill
-                
-                // Present the scene
-                view.presentScene(scene)
-            }
-            
-            view.ignoresSiblingOrder = true
-            
-            view.showsFPS = true
-            view.showsNodeCount = true
-        }
     }
 
     override var shouldAutorotate: Bool {
@@ -51,5 +50,22 @@ class GameViewController: UIViewController {
 
     override var prefersStatusBarHidden: Bool {
         return true
+    }
+    
+    func scheduledTimerWithTimeInterval(){
+        // Scheduling timer to Call the function "updateCounting" with the interval of 1 seconds
+        timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.updateCounting), userInfo: nil, repeats: true)
+    }
+    
+    //Check for messages from server
+    func updateCounting()
+    {
+        if let data = client?.read(1024*10, timeout: 1)
+        {
+            if let response = String(bytes: data, encoding: .utf8)
+            {
+                print(response)
+            }
+        }
     }
 }
